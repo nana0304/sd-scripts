@@ -48,6 +48,19 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+
+# デバッグ用出力
+print("[DEBUG] Current working directory:", os.getcwd())
+print("[DEBUG] sys.path (before):", sys.path)
+# プロジェクトルートを sys.path の先頭に追加
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+print("[DEBUG] project_root (to add to sys.path):", project_root)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+# custom_logger の import
+from custom_metrics.custom_logger import CustomLogger
+print("[DEBUG] sys.path (after):", sys.path)
+
 class NetworkTrainer:
     def __init__(self):
         self.vae_scale_factor = 0.18215
@@ -308,13 +321,16 @@ class NetworkTrainer:
 
     # endregion
 
-    def train(self, args):
+    def train(self, args, custom_logger=None):
         session_id = random.randint(0, 2**32)
         training_started_at = time.time()
         train_util.verify_training_args(args)
         train_util.prepare_dataset_args(args, True)
         deepspeed_utils.prepare_deepspeed_args(args)
         setup_logging(args, reset=True)
+        self.logging_dir = args.logging_dir
+        self.log_prefix = "train"
+        self.start_time = time.time()
 
         cache_latents = args.cache_latents
         use_dreambooth_method = args.in_json is None
@@ -1245,8 +1261,14 @@ class NetworkTrainer:
 
                     # min snr gamma, scale v pred loss like noise pred, v pred like loss, debiased estimation etc.
                     loss = self.post_process_loss(loss, args, timesteps, noise_scheduler)
-
+                    per_image_losses = loss.detach().cpu().tolist()
                     loss = loss.mean()  # 平均なのでbatch_sizeで割る必要なし
+
+                    # add custom logging for loss per image
+                    for path, l in zip(batch["absolute_paths"], per_image_losses):
+                        filename = os.path.basename(path)
+                        if custom_logger is not None:
+                            custom_logger.log_named(f"per_image_loss/{filename}", l, global_step)
 
                     accelerator.backward(loss)
                     if accelerator.sync_gradients:
@@ -1258,6 +1280,10 @@ class NetworkTrainer:
                     optimizer.step()
                     lr_scheduler.step()
                     optimizer.zero_grad(set_to_none=True)
+
+                    # log loss with custom logger
+                    if custom_logger:
+                        custom_logger.log(loss.item(), global_step)
 
                 if args.scale_weight_norms:
                     keys_scaled, mean_norm, maximum_norm = accelerator.unwrap_model(network).apply_max_norm_regularization(
@@ -1506,8 +1532,14 @@ if __name__ == "__main__":
     parser = setup_parser()
 
     args = parser.parse_args()
+
+    # add custom logger
+    custom_logger = None
+    if args.logging_dir is not None:
+        custom_logger = CustomLogger(args.gradient_accumulation_steps)
+
     train_util.verify_command_line_training_args(args)
     args = train_util.read_config_from_file(args, parser)
 
     trainer = NetworkTrainer()
-    trainer.train(args)
+    trainer.train(args, custom_logger)

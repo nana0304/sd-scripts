@@ -1,11 +1,25 @@
 import argparse
 from typing import List, Optional
+import os
+import sys
 
 import torch
 from accelerate import Accelerator
 from library.device_utils import init_ipex, clean_memory_on_device
 
 init_ipex()
+
+# デバッグ用出力
+print("[DEBUG] Current working directory:", os.getcwd())
+print("[DEBUG] sys.path (before):", sys.path)
+# プロジェクトルートを sys.path の先頭に追加
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+print("[DEBUG] project_root (to add to sys.path):", project_root)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+# custom_logger の import
+from custom_metrics.custom_logger import CustomLogger
+print("[DEBUG] sys.path (after):", sys.path)
 
 from library import sdxl_model_util, sdxl_train_util, strategy_base, strategy_sd, strategy_sdxl, train_util
 import train_network
@@ -219,10 +233,12 @@ def setup_parser() -> argparse.ArgumentParser:
 
 if __name__ == "__main__":
     parser = setup_parser()
-
     args = parser.parse_args()
-    train_util.verify_command_line_training_args(args)
-    args = train_util.read_config_from_file(args, parser)
+
+    # add custom logger
+    custom_logger = None
+    if args.logging_dir is not None:
+        custom_logger = CustomLogger(args.gradient_accumulation_steps)
 
     trainer = SdxlNetworkTrainer()
-    trainer.train(args)
+    trainer.train(args, custom_logger)
