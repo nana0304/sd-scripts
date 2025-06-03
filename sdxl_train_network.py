@@ -22,6 +22,9 @@ from custom_metrics.custom_logger import CustomLogger
 print("[DEBUG] sys.path (after):", sys.path)
 
 from library import sdxl_model_util, sdxl_train_util, strategy_base, strategy_sd, strategy_sdxl, train_util
+from library import deepspeed_utils, config_util, custom_train_functions
+from library.train_util import add_logging_arguments
+from library.sdxl_train_util import add_sdxl_training_arguments
 import train_network
 from library.utils import setup_logging
 
@@ -226,19 +229,35 @@ class SdxlNetworkTrainer(train_network.NetworkTrainer):
 
 
 def setup_parser() -> argparse.ArgumentParser:
-    parser = train_network.setup_parser()
-    sdxl_train_util.add_sdxl_training_arguments(parser)
+    parser = argparse.ArgumentParser()
+
+    add_logging_arguments(parser)
+    train_util.add_sd_models_arguments(parser)
+    train_util.add_dataset_arguments(parser, True, True, True)
+    train_util.add_training_arguments(parser, True)
+    train_util.add_masked_loss_arguments(parser)
+    deepspeed_utils.add_deepspeed_arguments(parser)
+    train_util.add_optimizer_arguments(parser)
+    config_util.add_config_arguments(parser)  # Add config file support
+    add_sdxl_training_arguments(parser)
+
     return parser
 
 
 if __name__ == "__main__":
     parser = setup_parser()
+
     args = parser.parse_args()
 
     # add custom logger
     custom_logger = None
     if args.logging_dir is not None:
         custom_logger = CustomLogger(args.gradient_accumulation_steps)
+
+    train_util.verify_command_line_training_args(args)
+    print("[DEBUG] Before reading config file, args.pretrained_model_name_or_path:", args.pretrained_model_name_or_path)
+    args = train_util.read_config_from_file(args, parser)  # Read config file
+    print("[DEBUG] After reading config file, args.pretrained_model_name_or_path:", args.pretrained_model_name_or_path)
 
     trainer = SdxlNetworkTrainer()
     trainer.train(args, custom_logger)
