@@ -1710,6 +1710,9 @@ class BaseDataset(torch.utils.data.Dataset):
         example["target_sizes_hw"] = torch.stack([torch.LongTensor(x) for x in target_sizes_hw])
         example["flippeds"] = flippeds
 
+        # add file absolute path
+        example["absolute_paths"] = [image_info.absolute_path for image_info in self.image_data.values()]
+
         example["network_multipliers"] = torch.FloatTensor([self.network_multiplier] * len(captions))
 
         if self.debug_dataset:
