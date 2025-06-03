@@ -23,10 +23,9 @@ print("[DEBUG] sys.path (after):", sys.path)
 
 from library import sdxl_model_util, sdxl_train_util, strategy_base, strategy_sd, strategy_sdxl, train_util
 from library import deepspeed_utils, config_util, custom_train_functions
-from library.train_util import add_logging_arguments
+from library.utils import add_logging_arguments, setup_logging
 from library.sdxl_train_util import add_sdxl_training_arguments
 import train_network
-from library.utils import setup_logging
 
 setup_logging()
 import logging
