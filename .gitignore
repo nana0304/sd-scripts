@@ -7,3 +7,6 @@ build
 .vscode
 wandb
 tmp/
+assets/output/
+assets/logs/
+assets/models/
