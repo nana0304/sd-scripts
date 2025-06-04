@@ -4242,7 +4242,7 @@ def verify_training_args(args: argparse.Namespace):
     #        "scale_v_pred_loss_like_noise_pred can be enabled only with v_parameterization / scale_v_pred_loss_like_noise_predはv_parameterizationが有効なときのみ有効にできます"
     #    )
 
-    if args.v_pred_like_loss and args.v_parameterization:
+    if getattr(args, "v_pred_like_loss", False) and getattr(args, "v_parameterization", False):
         raise ValueError(
             "v_pred_like_loss cannot be enabled with v_parameterization / v_pred_like_lossはv_parameterizationが有効なときには有効にできません"
         )
