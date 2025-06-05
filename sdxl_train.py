@@ -23,6 +23,7 @@ import library.train_util as train_util
 
 from library.utils import setup_logging, add_logging_arguments
 
+from custom_metrics.custom_logger import CustomLogger
 setup_logging()
 import logging
 
@@ -937,6 +938,32 @@ def setup_parser() -> argparse.ArgumentParser:
         default=None,
         help="number of optimizers for fused backward pass and optimizer step / fused backward passとoptimizer stepのためのoptimizer数",
     )
+
+    parser.add_argument(
+        "--debiased_estimation_loss",
+        action="store_true",
+        default=False,
+        help="Use debiased estimation loss / デバイアス推定損失を使用する"
+    )
+    parser.add_argument(
+        "--scale_v_pred_loss_like_noise_pred",
+        action="store_true",
+        default=False,
+        help="Scale v-prediction loss like noise prediction / v予測損失をノイズ予測のようにスケーリング"
+    )
+    parser.add_argument(
+        "--v_pred_like_loss",
+        type=float,
+        default=None,
+        help="Add v-prediction like loss (float value) / v予測のような損失を追加"
+    )
+    parser.add_argument(
+        "--weighted_captions",
+        action="store_true",
+        default=False,
+        help="Enable weighted captions / 重み付きキャプションを有効にする"
+    )
+
     return parser
 
 
@@ -944,6 +971,12 @@ if __name__ == "__main__":
     parser = setup_parser()
 
     args = parser.parse_args()
+
+    # add custom logger
+    custom_logger = None
+    if args.logging_dir is not None:
+        custom_logger = CustomLogger(args.gradient_accumulation_steps)
+
     train_util.verify_command_line_training_args(args)
     args = train_util.read_config_from_file(args, parser)
 

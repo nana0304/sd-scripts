@@ -324,16 +324,11 @@ class NetworkTrainer:
 
     def train(self, args, custom_logger=None):
 
-        ##### DEBEG #############################################################################
         # 引数の使用状況を解析
-        analyzer = ArgumentUsageAnalyzer(args)
-        
-        # 現在のファイルを解析
-        current_file = os.path.abspath(__file__)
-        analyzer.analyze_file(current_file)
-        # 解析結果を表示
-        analyzer.print_analysis()
-        ###########################################################################################
+        # analyzer = ArgumentUsageAnalyzer(args)
+        # current_file = os.path.abspath(__file__)
+        # analyzer.analyze_file(current_file)
+        # analyzer.print_analysis()
 
 
         session_id = random.randint(0, 2**32)
@@ -1569,6 +1564,8 @@ def setup_parser() -> argparse.ArgumentParser:
 
 if __name__ == "__main__":
     parser = setup_parser()
+
+    print("[DEBUG] setup_parser registered options:", list(parser._option_string_actions.keys()))
 
     args = parser.parse_args()
 
