@@ -1570,6 +1570,8 @@ def setup_parser() -> argparse.ArgumentParser:
 if __name__ == "__main__":
     parser = setup_parser()
 
+    print("[DEBUG] setup_parser registered options:", list(parser._option_string_actions.keys()))
+
     args = parser.parse_args()
 
     # add custom logger
