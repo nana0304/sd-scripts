@@ -47,6 +47,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from tools.argument_analyzer import ArgumentUsageAnalyzer
 
 
 # デバッグ用出力
@@ -322,6 +323,19 @@ class NetworkTrainer:
     # endregion
 
     def train(self, args, custom_logger=None):
+
+        ##### DEBEG #############################################################################
+        # 引数の使用状況を解析
+        analyzer = ArgumentUsageAnalyzer(args)
+        
+        # 現在のファイルを解析
+        current_file = os.path.abspath(__file__)
+        analyzer.analyze_file(current_file)
+        # 解析結果を表示
+        analyzer.print_analysis()
+        ###########################################################################################
+
+
         session_id = random.randint(0, 2**32)
         training_started_at = time.time()
         train_util.verify_training_args(args)
