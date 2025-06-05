@@ -9,17 +9,12 @@ from library.device_utils import init_ipex, clean_memory_on_device
 
 init_ipex()
 
-# デバッグ用出力
-print("[DEBUG] Current working directory:", os.getcwd())
-print("[DEBUG] sys.path (before):", sys.path)
 # プロジェクトルートを sys.path の先頭に追加
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-print("[DEBUG] project_root (to add to sys.path):", project_root)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 # custom_logger の import
 from custom_metrics.custom_logger import CustomLogger
-print("[DEBUG] sys.path (after):", sys.path)
 
 from library import sdxl_model_util, sdxl_train_util, strategy_base, strategy_sd, strategy_sdxl, train_util
 from library import deepspeed_utils, config_util, custom_train_functions
@@ -397,8 +392,6 @@ def setup_parser() -> argparse.ArgumentParser:
 
 if __name__ == "__main__":
     parser = setup_parser()
-    print("[DEBUG] SDXL setup_parser registered options:", list(parser._option_string_actions.keys()))
-
     args = parser.parse_args()
 
     # add custom logger
@@ -407,9 +400,7 @@ if __name__ == "__main__":
         custom_logger = CustomLogger(args.gradient_accumulation_steps)
 
     train_util.verify_command_line_training_args(args)
-    print("[DEBUG] Before reading config file, args.pretrained_model_name_or_path:", args.pretrained_model_name_or_path)
     args = train_util.read_config_from_file(args, parser)  # Read config file
-    print("[DEBUG] After reading config file, args.pretrained_model_name_or_path:", args.pretrained_model_name_or_path)
 
     trainer = SdxlNetworkTrainer()
     trainer.train(args, custom_logger)
