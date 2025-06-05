@@ -1539,11 +1539,13 @@ def setup_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--debiased_estimation_loss",
         action="store_true",
+        default=False,
         help="Use debiased estimation loss / デバイアス推定損失を使用する"
     )
     parser.add_argument(
         "--scale_v_pred_loss_like_noise_pred",
         action="store_true",
+        default=False,
         help="Scale v-prediction loss like noise prediction / v予測損失をノイズ予測のようにスケーリング"
     )
     parser.add_argument(
@@ -1555,6 +1557,7 @@ def setup_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--weighted_captions",
         action="store_true",
+        default=False,
         help="Enable weighted captions / 重み付きキャプションを有効にする"
     )
 
