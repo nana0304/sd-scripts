@@ -7,9 +7,8 @@ import random
 import time
 import json
 from multiprocessing import Value
-from typing import Any, List, Set, Dict, Union
+from typing import Any, List
 import toml
-import ast
 
 from tqdm import tqdm
 
@@ -46,10 +45,9 @@ from library.utils import setup_logging, add_logging_arguments
 setup_logging()
 import logging
 
-from tools.argument_analyzer import ArgumentUsageAnalyzer
-
 logger = logging.getLogger(__name__)
 
+from tools.argument_analyzer import ArgumentUsageAnalyzer
 
 
 # デバッグ用出力
@@ -63,8 +61,6 @@ if project_root not in sys.path:
 # custom_logger の import
 from custom_metrics.custom_logger import CustomLogger
 print("[DEBUG] sys.path (after):", sys.path)
-
-
 
 class NetworkTrainer:
     def __init__(self):
@@ -327,143 +323,18 @@ class NetworkTrainer:
     # endregion
 
     def train(self, args, custom_logger=None):
+
+        ##### DEBEG #############################################################################
         # 引数の使用状況を解析
         analyzer = ArgumentUsageAnalyzer(args)
         
         # 現在のファイルを解析
         current_file = os.path.abspath(__file__)
         analyzer.analyze_file(current_file)
-        
-        # メタデータで使用される引数を解析
-        metadata_args = [
-            # 基本設定
-            "output_name",
-            "learning_rate",
-            "unet_lr",
-            "text_encoder_lr",
-            "gradient_checkpointing",
-            "gradient_accumulation_steps",
-            "max_train_steps",
-            "max_train_epochs",
-            "lr_warmup_steps",
-            "lr_scheduler",
-            "network_module",
-            "network_dim",
-            "network_alpha",
-            "network_dropout",
-            "mixed_precision",
-            "full_fp16",
-            "full_bf16",
-            "v2",
-            "v_parameterization",
-            "clip_skip",
-            "max_token_length",
-            "cache_latents",
-            "cache_latents_to_disk",
-            "seed",
-            "lowram",
-            "training_comment",
-            "max_grad_norm",
-            "save_every_n_steps",
-            "save_every_n_epochs",
-            "save_n_epoch_ratio",
-            "save_state",
-            "save_state_on_train_end",
-            "resume",
-            "pretrained_model_name_or_path",
-            "vae",
-            "output_dir",
-            "logging_dir",
-            "log_prefix",
-            "log_tracker_name",
-            "log_tracker_config",
-            "wandb_run_name",
-            "huggingface_repo_id",
-            
-            # ノイズ関連
-            "noise_offset",
-            "multires_noise_iterations",
-            "multires_noise_discount",
-            "adaptive_noise_scale",
-            "zero_terminal_snr",
-            "noise_offset_random_strength",
-            
-            # キャプション関連
-            "caption_dropout_rate",
-            "caption_dropout_every_n_epochs",
-            "caption_tag_dropout_rate",
-            "weighted_captions",
-            "shuffle_caption",
-            "keep_tokens",
-            "keep_tokens_separator",
-            "secondary_separator",
-            "enable_wildcard",
-            "caption_prefix",
-            "caption_suffix",
-            
-            # データ拡張
-            "face_crop_aug_range",
-            "color_aug",
-            "flip_aug",
-            "random_crop",
-            
-            # 損失関数関連
-            "prior_loss_weight",
-            "min_snr_gamma",
-            "scale_weight_norms",
-            "ip_noise_gamma",
-            "debiased_estimation_loss",
-            "ip_noise_gamma_random_strength",
-            "loss_type",
-            "huber_schedule",
-            "huber_scale",
-            "huber_c",
-            "scale_v_pred_loss_like_noise_pred",
-            "v_pred_like_loss",
-            "masked_loss",
-            
-            # FP8関連
-            "fp8_base",
-            "fp8_base_unet",
-            
-            # データセット関連
-            "train_data_dir",
-            "reg_data_dir",
-            "in_json",
-            "dataset_config",
-            "dataset_class",
-            "train_batch_size",
-            "resolution",
-            "enable_bucket",
-            "bucket_no_upscale",
-            "min_bucket_reso",
-            "max_bucket_reso",
-            "persistent_data_loader_workers",
-            "max_data_loader_n_workers",
-            "debug_dataset",
-            
-            # ネットワーク関連
-            "network_weights",
-            "network_args",
-            "base_weights",
-            "base_weights_multiplier",
-            "dim_from_weights",
-            "network_train_unet_only",
-            "network_train_text_encoder_only",
-            
-            # その他
-            "no_half_vae",
-            "skip_until_initial_step",
-            "initial_epoch",
-            "initial_step",
-            "cpu_offload_checkpointing",
-            "no_metadata",
-            "save_model_as",
-        ]
-        analyzer.set_metadata_args_specification(metadata_args)
-        
         # 解析結果を表示
         analyzer.print_analysis()
+        ###########################################################################################
+
 
         session_id = random.randint(0, 2**32)
         training_started_at = time.time()
@@ -961,13 +832,11 @@ class NetworkTrainer:
             "ss_network_dropout": args.network_dropout,  # some networks may not have dropout
             "ss_mixed_precision": args.mixed_precision,
             "ss_full_fp16": bool(args.full_fp16),
-            "ss_full_bf16": bool(args.full_bf16),
             "ss_v2": bool(args.v2),
-            "ss_v_parameterization": bool(args.v_parameterization),
+            "ss_base_model_version": model_version,
             "ss_clip_skip": args.clip_skip,
             "ss_max_token_length": args.max_token_length,
             "ss_cache_latents": bool(args.cache_latents),
-            "ss_cache_latents_to_disk": bool(args.cache_latents_to_disk),
             "ss_seed": args.seed,
             "ss_lowram": args.lowram,
             "ss_noise_offset": args.noise_offset,
@@ -975,17 +844,6 @@ class NetworkTrainer:
             "ss_multires_noise_discount": args.multires_noise_discount,
             "ss_adaptive_noise_scale": args.adaptive_noise_scale,
             "ss_zero_terminal_snr": args.zero_terminal_snr,
-            "ss_noise_offset_random_strength": args.noise_offset_random_strength,
-            "ss_ip_noise_gamma_random_strength": args.ip_noise_gamma_random_strength,
-            "ss_loss_type": args.loss_type,
-            "ss_huber_schedule": args.huber_schedule,
-            "ss_huber_scale": args.huber_scale,
-            "ss_huber_c": args.huber_c,
-            "ss_scale_v_pred_loss_like_noise_pred": bool(args.scale_v_pred_loss_like_noise_pred),
-            "ss_v_pred_like_loss": bool(args.v_pred_like_loss),
-            "ss_masked_loss": bool(args.masked_loss),
-            "ss_fp8_base": bool(args.fp8_base),
-            "ss_fp8_base_unet": bool(args.fp8_base_unet),
             "ss_training_comment": args.training_comment,  # will not be updated after training
             "ss_sd_scripts_commit_hash": train_util.get_git_revision_hash(),
             "ss_optimizer": optimizer_name + (f"({optimizer_args})" if len(optimizer_args) > 0 else ""),
@@ -994,66 +852,19 @@ class NetworkTrainer:
             "ss_caption_dropout_every_n_epochs": args.caption_dropout_every_n_epochs,
             "ss_caption_tag_dropout_rate": args.caption_tag_dropout_rate,
             "ss_face_crop_aug_range": args.face_crop_aug_range,
-            "ss_color_aug": bool(args.color_aug),
-            "ss_flip_aug": bool(args.flip_aug),
-            "ss_random_crop": bool(args.random_crop),
             "ss_prior_loss_weight": args.prior_loss_weight,
             "ss_min_snr_gamma": args.min_snr_gamma,
             "ss_scale_weight_norms": args.scale_weight_norms,
             "ss_ip_noise_gamma": args.ip_noise_gamma,
             "ss_debiased_estimation": bool(args.debiased_estimation_loss),
-            "ss_loss_type_random_strength": args.loss_type_random_strength,
-            "ss_huber_schedule_random_strength": args.huber_schedule_random_strength,
-            "ss_huber_scale_random_strength": args.huber_scale_random_strength,
-            "ss_huber_c_random_strength": args.huber_c_random_strength,
-            "ss_scale_v_pred_loss_like_noise_pred_random_strength": args.scale_v_pred_loss_like_noise_pred_random_strength,
-            "ss_v_pred_like_loss_random_strength": args.v_pred_like_loss_random_strength,
-            "ss_masked_loss_random_strength": args.masked_loss_random_strength,
-            "ss_fp8_base_random_strength": args.fp8_base_random_strength,
-            "ss_fp8_base_unet_random_strength": args.fp8_base_unet_random_strength,
-            "ss_save_every_n_steps": args.save_every_n_steps,
-            "ss_save_every_n_epochs": args.save_every_n_epochs,
-            "ss_save_n_epoch_ratio": args.save_n_epoch_ratio,
-            "ss_save_state": bool(args.save_state),
-            "ss_save_state_on_train_end": bool(args.save_state_on_train_end),
-            "ss_resume": bool(args.resume),
-            "ss_pretrained_model_name_or_path": args.pretrained_model_name_or_path,
-            "ss_vae": args.vae,
-            "ss_output_dir": args.output_dir,
-            "ss_logging_dir": args.logging_dir,
-            "ss_log_prefix": args.log_prefix,
-            "ss_log_tracker_name": args.log_tracker_name,
-            "ss_log_tracker_config": args.log_tracker_config,
-            "ss_wandb_run_name": args.wandb_run_name,
-            "ss_huggingface_repo_id": args.huggingface_repo_id,
-            "ss_train_data_dir": args.train_data_dir,
-            "ss_reg_data_dir": args.reg_data_dir,
-            "ss_in_json": args.in_json,
-            "ss_dataset_config": args.dataset_config,
-            "ss_dataset_class": args.dataset_class,
-            "ss_train_batch_size": args.train_batch_size,
-            "ss_resolution": args.resolution,
-            "ss_enable_bucket": bool(args.enable_bucket),
-            "ss_bucket_no_upscale": bool(args.bucket_no_upscale),
-            "ss_min_bucket_reso": args.min_bucket_reso,
-            "ss_max_bucket_reso": args.max_bucket_reso,
-            "ss_persistent_data_loader_workers": args.persistent_data_loader_workers,
-            "ss_max_data_loader_n_workers": args.max_data_loader_n_workers,
-            "ss_debug_dataset": bool(args.debug_dataset),
-            "ss_network_weights": args.network_weights,
-            "ss_network_args": args.network_args,
-            "ss_base_weights": args.base_weights,
-            "ss_base_weights_multiplier": args.base_weights_multiplier,
-            "ss_dim_from_weights": bool(args.dim_from_weights),
-            "ss_network_train_unet_only": bool(args.network_train_unet_only),
-            "ss_network_train_text_encoder_only": bool(args.network_train_text_encoder_only),
-            "ss_no_half_vae": bool(args.no_half_vae),
-            "ss_skip_until_initial_step": bool(args.skip_until_initial_step),
-            "ss_initial_epoch": args.initial_epoch,
-            "ss_initial_step": args.initial_step,
-            "ss_cpu_offload_checkpointing": bool(args.cpu_offload_checkpointing),
-            "ss_no_metadata": bool(args.no_metadata),
-            "ss_save_model_as": args.save_model_as,
+            "ss_noise_offset_random_strength": args.noise_offset_random_strength,
+            "ss_ip_noise_gamma_random_strength": args.ip_noise_gamma_random_strength,
+            "ss_loss_type": args.loss_type,
+            "ss_huber_schedule": args.huber_schedule,
+            "ss_huber_scale": args.huber_scale,
+            "ss_huber_c": args.huber_c,
+            "ss_fp8_base": bool(args.fp8_base),
+            "ss_fp8_base_unet": bool(args.fp8_base_unet),
         }
 
         self.update_metadata(metadata, args)  # architecture specific metadata
@@ -1725,6 +1536,31 @@ def setup_parser() -> argparse.ArgumentParser:
         help="initial step number including all epochs, 0 means first step (same as not specifying). overwrites initial_epoch."
         + " / 初期ステップ数、全エポックを含むステップ数、0で最初のステップ（未指定時と同じ）。initial_epochを上書きする",
     )
+    parser.add_argument(
+        "--debiased_estimation_loss",
+        action="store_true",
+        default=False,
+        help="Use debiased estimation loss / デバイアス推定損失を使用する"
+    )
+    parser.add_argument(
+        "--scale_v_pred_loss_like_noise_pred",
+        action="store_true",
+        default=False,
+        help="Scale v-prediction loss like noise prediction / v予測損失をノイズ予測のようにスケーリング"
+    )
+    parser.add_argument(
+        "--v_pred_like_loss",
+        type=float,
+        default=None,
+        help="Add v-prediction like loss (float value) / v予測のような損失を追加"
+    )
+    parser.add_argument(
+        "--weighted_captions",
+        action="store_true",
+        default=False,
+        help="Enable weighted captions / 重み付きキャプションを有効にする"
+    )
+
     # parser.add_argument("--loraplus_lr_ratio", default=None, type=float, help="LoRA+ learning rate ratio")
     # parser.add_argument("--loraplus_unet_lr_ratio", default=None, type=float, help="LoRA+ UNet learning rate ratio")
     # parser.add_argument("--loraplus_text_encoder_lr_ratio", default=None, type=float, help="LoRA+ text encoder learning rate ratio")
@@ -1733,6 +1569,8 @@ def setup_parser() -> argparse.ArgumentParser:
 
 if __name__ == "__main__":
     parser = setup_parser()
+
+    print("[DEBUG] setup_parser registered options:", list(parser._option_string_actions.keys()))
 
     args = parser.parse_args()
 

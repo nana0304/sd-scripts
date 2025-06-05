@@ -4486,14 +4486,27 @@ def add_sd_saving_arguments(parser: argparse.ArgumentParser):
 
 
 def read_config_from_file(args: argparse.Namespace, parser: argparse.ArgumentParser):
+
+    print("[DEBUG] enter read_config_from_file, args.config_file =", args.config_file)
+    print("[DEBUG] parser options (before):", list(parser._option_string_actions.keys()))
+
     if not args.config_file:
+        print(">>> [DEBUG] skipping config read because config_file is empty")
         return args
+
+    # この時点で必ず parser に '--debiased_estimation_loss' が載っているはず
+    # もし載っていなければ、setup_parser() が呼ばれていない or 別の parser を見ている
+    if "--debiased_estimation_loss" not in parser._option_string_actions:
+        print("[ERROR] parser has NO '--debiased_estimation_loss' entry!")
 
     config_path = args.config_file + ".toml" if not args.config_file.endswith(".toml") else args.config_file
 
     if args.output_config:
         # check if config file exists
         if os.path.exists(config_path):
+
+            print(f"[DEBUG] config_path `{config_path}` does not exist → exit(1)")
+
             logger.error(f"Config file already exists. Aborting... / 出力先の設定ファイルが既に存在します: {config_path}")
             exit(1)
 
@@ -4546,7 +4559,10 @@ def read_config_from_file(args: argparse.Namespace, parser: argparse.ArgumentPar
             ignore_nesting_dict[key] = value
 
     config_args = argparse.Namespace(**ignore_nesting_dict)
+    print("[DEBUG] config_args:", config_args.__dict__)  # ←ここで中身を確認
+
     args = parser.parse_args(namespace=config_args)
+    print("[DEBUG] args after parse_args:", args.__dict__)  # ←ここで最終的なargsを確認
     args.config_file = os.path.splitext(args.config_file)[0]
     logger.info(args.config_file)
 

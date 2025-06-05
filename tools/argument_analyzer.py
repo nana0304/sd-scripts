@@ -7,6 +7,137 @@ class ArgumentUsageAnalyzer:
         self.defined_args = set(vars(self.args_obj).keys())
         self.code_used_args = set()
         self.metadata_args_spec = set()
+        self._set_metadata_args_specification()
+
+    def _set_metadata_args_specification(self):
+        """メタデータで使用されると指定された引数のリストを設定"""
+        metadata_args = [
+            # 基本設定
+            "output_name",
+            "learning_rate",
+            "unet_lr",
+            "text_encoder_lr",
+            "gradient_checkpointing",
+            "gradient_accumulation_steps",
+            "max_train_steps",
+            "max_train_epochs",
+            "lr_warmup_steps",
+            "lr_scheduler",
+            "network_module",
+            "network_dim",
+            "network_alpha",
+            "network_dropout",
+            "mixed_precision",
+            "full_fp16",
+            "full_bf16",
+            "v2",
+            "v_parameterization",
+            "clip_skip",
+            "max_token_length",
+            "cache_latents",
+            "cache_latents_to_disk",
+            "seed",
+            "lowram",
+            "training_comment",
+            "max_grad_norm",
+            "save_every_n_steps",
+            "save_every_n_epochs",
+            "save_n_epoch_ratio",
+            "save_state",
+            "save_state_on_train_end",
+            "resume",
+            "pretrained_model_name_or_path",
+            "vae",
+            "output_dir",
+            "logging_dir",
+            "log_prefix",
+            "log_tracker_name",
+            "log_tracker_config",
+            "wandb_run_name",
+            "huggingface_repo_id",
+            
+            # ノイズ関連
+            "noise_offset",
+            "multires_noise_iterations",
+            "multires_noise_discount",
+            "adaptive_noise_scale",
+            "zero_terminal_snr",
+            "noise_offset_random_strength",
+            
+            # キャプション関連
+            "caption_dropout_rate",
+            "caption_dropout_every_n_epochs",
+            "caption_tag_dropout_rate",
+            "weighted_captions",
+            "shuffle_caption",
+            "keep_tokens",
+            "keep_tokens_separator",
+            "secondary_separator",
+            "enable_wildcard",
+            "caption_prefix",
+            "caption_suffix",
+            
+            # データ拡張
+            "face_crop_aug_range",
+            "color_aug",
+            "flip_aug",
+            "random_crop",
+            
+            # 損失関数関連
+            "prior_loss_weight",
+            "min_snr_gamma",
+            "scale_weight_norms",
+            "ip_noise_gamma",
+            "debiased_estimation_loss",
+            "ip_noise_gamma_random_strength",
+            "loss_type",
+            "huber_schedule",
+            "huber_scale",
+            "huber_c",
+            "scale_v_pred_loss_like_noise_pred",
+            "v_pred_like_loss",
+            "masked_loss",
+            
+            # FP8関連
+            "fp8_base",
+            "fp8_base_unet",
+            
+            # データセット関連
+            "train_data_dir",
+            "reg_data_dir",
+            "in_json",
+            "dataset_config",
+            "dataset_class",
+            "train_batch_size",
+            "resolution",
+            "enable_bucket",
+            "bucket_no_upscale",
+            "min_bucket_reso",
+            "max_bucket_reso",
+            "persistent_data_loader_workers",
+            "max_data_loader_n_workers",
+            "debug_dataset",
+            
+            # ネットワーク関連
+            "network_weights",
+            "network_args",
+            "base_weights",
+            "base_weights_multiplier",
+            "dim_from_weights",
+            "network_train_unet_only",
+            "network_train_text_encoder_only",
+            
+            # その他
+            "no_half_vae",
+            "skip_until_initial_step",
+            "initial_epoch",
+            "initial_step",
+            "cpu_offload_checkpointing",
+            "no_metadata",
+            "save_model_as",
+        ]
+        self.set_metadata_args_specification(metadata_args)
+     
 
     def _get_str_from_ast_node(self, node: ast.AST) -> Union[str, None]:
         """ASTノードから文字列リテラルを抽出するヘルパー"""

@@ -140,6 +140,60 @@ def add_custom_train_arguments(parser: argparse.ArgumentParser, support_weighted
             default=False,
             help="Enable weighted captions in the standard style (token:1.3). No commas inside parens, or shuffle/dropout may break the decoder. / 「[token]」、「(token)」「(token:1.3)」のような重み付きキャプションを有効にする。カンマを括弧内に入れるとシャッフルやdropoutで重みづけがおかしくなるので注意",
         )
+    parser.add_argument(
+        "--fp8_base_random_strength",
+        type=float,
+        default=None,
+        help="random strength for fp8 base / fp8 baseのランダム強度",
+    )
+    parser.add_argument(
+        "--fp8_base_unet_random_strength",
+        type=float,
+        default=None,
+        help="random strength for fp8 base unet / fp8 base unetのランダム強度",
+    )
+    parser.add_argument(
+        "--huber_c_random_strength",
+        type=float,
+        default=None,
+        help="random strength for huber c / huber cのランダム強度",
+    )
+    parser.add_argument(
+        "--huber_scale_random_strength",
+        type=float,
+        default=None,
+        help="random strength for huber scale / huber scaleのランダム強度",
+    )
+    parser.add_argument(
+        "--huber_schedule_random_strength",
+        type=float,
+        default=None,
+        help="random strength for huber schedule / huber scheduleのランダム強度",
+    )
+    parser.add_argument(
+        "--loss_type_random_strength",
+        type=float,
+        default=None,
+        help="random strength for loss type / 損失タイプのランダム強度",
+    )
+    parser.add_argument(
+        "--masked_loss_random_strength",
+        type=float,
+        default=None,
+        help="random strength for masked loss / マスク損失のランダム強度",
+    )
+    parser.add_argument(
+        "--scale_v_pred_loss_like_noise_pred_random_strength",
+        type=float,
+        default=None,
+        help="random strength for scale v-prediction loss like noise prediction / v-prediction損失のスケーリングのランダム強度",
+    )
+    parser.add_argument(
+        "--v_pred_like_loss_random_strength",
+        type=float,
+        default=None,
+        help="random strength for v-prediction like loss / v-predictionライクな損失のランダム強度",
+    )
 
 
 re_attention = re.compile(
