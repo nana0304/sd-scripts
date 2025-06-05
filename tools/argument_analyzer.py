@@ -7,7 +7,7 @@ class ArgumentUsageAnalyzer:
         self.defined_args = set(vars(self.args_obj).keys())
         self.code_used_args = set()
         self.metadata_args_spec = set()
-        self._set.metadata_args_specification()
+        self._set_metadata_args_specification()
 
     def _set_metadata_args_specification(self):
         """メタデータで使用されると指定された引数のリストを設定"""
