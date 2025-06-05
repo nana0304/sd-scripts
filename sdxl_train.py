@@ -724,6 +724,14 @@ def train(args):
                         loss = apply_masked_loss(loss, batch)
                     loss = loss.mean([1, 2, 3])
 
+                    # apply custom loss functions to culculate loss per image
+                    per_image_losses = loss.detach().cpu().numpy()
+                    for path, l in zip(batch["absolute_paths"], per_image_losses):
+                        filename = os.path.basename(path)
+                        if custom_logger is not None:
+                            custom_logger.log_named(f"per_image_loss/{filename}", l, global_step)
+
+
                     if args.min_snr_gamma:
                         loss = apply_snr_weight(loss, timesteps, noise_scheduler, args.min_snr_gamma, args.v_parameterization)
                     if args.scale_v_pred_loss_like_noise_pred:
@@ -736,6 +744,11 @@ def train(args):
                     loss = loss.mean()  # mean over batch dimension
                 else:
                     loss = train_util.conditional_loss(noise_pred.float(), target.float(), args.loss_type, "mean", huber_c)
+
+
+                # log loss with custom logger
+                if custom_logger:
+                    custom_logger.log(loss.item(), global_step)
 
                 accelerator.backward(loss)
 
