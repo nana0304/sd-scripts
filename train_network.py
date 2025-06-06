@@ -1274,10 +1274,11 @@ class NetworkTrainer:
                     loss = loss.mean()  # 平均なのでbatch_sizeで割る必要なし
 
                     # add custom logging for loss per image
+                    custom_logger.accelerator = accelerator
                     for path, l in zip(batch["absolute_paths"], per_image_losses):
                         filename = os.path.basename(path)
                         if custom_logger is not None:
-                            custom_logger.log_named(f"per_image_loss/{filename}", l, global_step, accelerator)
+                            custom_logger.log_named(f"per_image_loss/{filename}", l, global_step)
 
                     accelerator.backward(loss)
                     if accelerator.sync_gradients:
