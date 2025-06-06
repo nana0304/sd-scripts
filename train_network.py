@@ -1295,10 +1295,15 @@ class NetworkTrainer:
                         custom_logger.path_buffer = []
 
                     # Log paths info
-                    print(f"🧪 [Debug] absolute_paths: len={len(batch['absolute_paths'])}, values={batch['absolute_paths']}")
+                    image_keys = batch["image_keys"]
+                    absolute_paths = [self.image_data[k].absolute_path for k in image_keys]
+                    print(f"🧪 [Debug] absolute_paths (from image_keys): len={len(absolute_paths)}, values={absolute_paths}")
 
                     # Store per-image loss and corresponding path
-                    custom_logger.loss_buffer.extend(zip(batch["absolute_paths"], per_image_losses))
+                    if len(absolute_paths) != len(per_image_losses):
+                        raise ValueError(f"🧨 Mismatch: len(absolute_paths)={len(absolute_paths)} vs len(per_image_losses)={len(per_image_losses)}")
+
+                    custom_logger.loss_buffer.extend(zip(absolute_paths, per_image_losses))
 
                     if accelerator.sync_gradients:
                         print("🧪 [Debug] sync_gradients=True, flushing loss_buffer...")

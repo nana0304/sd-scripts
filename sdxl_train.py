@@ -742,17 +742,22 @@ def train(args):
                     # 初回のみ buffer 準備
                     if not hasattr(custom_logger, "loss_buffer"):
                         custom_logger.loss_buffer = []
-                        custom_logger.path_buffer = []
 
                     # 💾 Per-image loss をキャッシュ（この段階で .detach() して numpy 変換）
                     per_image_losses = loss.detach().cpu().numpy()
                     per_image_losses = np.atleast_1d(per_image_losses)
 
+                    # ファイルパス取得（self は使わず、batch から）
+                    absolute_paths = batch.get("absolute_paths", [])
                     print(f"🧪 [Debug] per_image_losses: len={len(per_image_losses)}, values={per_image_losses}")
-                    print(f"🧪 [Debug] absolute_paths: len={len(batch['absolute_paths'])}, values={batch['absolute_paths']}")
+                    print(f"🧪 [Debug] absolute_paths: len={len(absolute_paths)}, values={absolute_paths}")
+
+                    # 整合性チェック
+                    if len(per_image_losses) != len(absolute_paths):
+                        raise ValueError(f"🧨 Mismatch: per_image_losses ({len(per_image_losses)}) vs absolute_paths ({len(absolute_paths)})")
 
                     # 対応するファイルパスと一緒に buffer に保持
-                    custom_logger.loss_buffer.extend(zip(batch["absolute_paths"], per_image_losses))
+                    custom_logger.loss_buffer.extend(zip(absolute_paths, per_image_losses))
 
                     # 🔚 ここで全体の loss（ログには使わない）を平均化して最終的に返す用などに使う
                     loss = loss.mean()
