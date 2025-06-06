@@ -1296,7 +1296,7 @@ class NetworkTrainer:
 
                     # Log paths info
                     image_keys = batch["image_keys"]
-                    absolute_paths = [self.image_data[k].absolute_path for k in image_keys]
+                    absolute_paths = batch["absolute_paths"]
                     print(f"🧪 [Debug] absolute_paths (from image_keys): len={len(absolute_paths)}, values={absolute_paths}")
 
                     # Store per-image loss and corresponding path

@@ -748,7 +748,7 @@ def train(args):
                     per_image_losses = np.atleast_1d(per_image_losses)
 
                     # ファイルパス取得（self は使わず、batch から）
-                    absolute_paths = batch.get("absolute_paths", [])
+                    absolute_paths = batch["absolute_paths"]
                     print(f"🧪 [Debug] per_image_losses: len={len(per_image_losses)}, values={per_image_losses}")
                     print(f"🧪 [Debug] absolute_paths: len={len(absolute_paths)}, values={absolute_paths}")
 
