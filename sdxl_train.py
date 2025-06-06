@@ -725,32 +725,39 @@ def train(args):
                     if args.masked_loss or ("alpha_masks" in batch and batch["alpha_masks"] is not None):
                         loss = apply_masked_loss(loss, batch)
 
+                    # まず channel, height, width の平均を取って per-sample loss に
                     loss = loss.mean([1, 2, 3])
                     print(f"🧪 [Debug] Loss shape after mean([1,2,3]): {loss.shape}")
+
                     # --- additional info on masking ---
                     print(f"🧪 [Debug] args.masked_loss: {getattr(args, 'masked_loss', False)}")
                     print(f"🧪 [Debug] alpha_masks in batch: {'alpha_masks' in batch and batch['alpha_masks'] is not None}")
 
+                    # Custom logger の初期化
                     if custom_logger is None:
                         custom_logger = CustomLogger(args)
                     if not hasattr(custom_logger, 'accelerator') or custom_logger.accelerator is None:
                         custom_logger.accelerator = accelerator
 
-                    # initialize buffer if not already
+                    # 初回のみ buffer 準備
                     if not hasattr(custom_logger, "loss_buffer"):
                         custom_logger.loss_buffer = []
                         custom_logger.path_buffer = []
 
-                    # convert per-image loss safely
+                    # 💾 Per-image loss をキャッシュ（この段階で .detach() して numpy 変換）
                     per_image_losses = loss.detach().cpu().numpy()
                     per_image_losses = np.atleast_1d(per_image_losses)
 
                     print(f"🧪 [Debug] per_image_losses: len={len(per_image_losses)}, values={per_image_losses}")
                     print(f"🧪 [Debug] absolute_paths: len={len(batch['absolute_paths'])}, values={batch['absolute_paths']}")
 
-                    # buffer per-image losses and paths
+                    # 対応するファイルパスと一緒に buffer に保持
                     custom_logger.loss_buffer.extend(zip(batch["absolute_paths"], per_image_losses))
 
+                    # 🔚 ここで全体の loss（ログには使わない）を平均化して最終的に返す用などに使う
+                    loss = loss.mean()
+
+                    # 勾配同期のときに flush
                     if accelerator.sync_gradients:
                         print("🧪 [Debug] sync_gradients=True, flushing loss_buffer...")
                         for path, l in custom_logger.loss_buffer:
