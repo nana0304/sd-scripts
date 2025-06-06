@@ -726,12 +726,26 @@ def train(args):
 
                     # apply custom loss functions to culculate loss per image
                     custom_logger.accelerator = accelerator
-                    per_image_losses = loss.detach().cpu().numpy()
                     if custom_logger is None:
                         custom_logger = CustomLogger(args)
                     if not hasattr(custom_logger, 'accelerator') or custom_logger.accelerator is None:
                         custom_logger.accelerator = accelerator
-                        
+
+
+                    per_image_losses = loss.detach().cpu().numpy()
+      
+                    ## DEBUG: log per image losses
+                    if isinstance(per_image_losses, float) or (hasattr(per_image_losses, "ndim") and per_image_losses.ndim == 0):
+                        per_image_losses = [per_image_losses]
+
+                    paths = batch["absolute_paths"]
+                    print("🧪 [Debug] Step", global_step)
+                    print(f"   📸 Number of paths: {len(paths)}")
+                    print(f"   📉 Number of per_image_losses: {len(per_image_losses)}")
+                    print(f"   🔄 sync_gradients: {accelerator.sync_gradients}")
+                    print(f"   🧵 accumulation step: global_step = {global_step}, accumulation = {args.gradient_accumulation_steps}")
+                    ### DEBUG END
+
                     for path, l in zip(batch["absolute_paths"], per_image_losses):
                         filename = os.path.basename(path)
                         if custom_logger is not None:
