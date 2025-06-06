@@ -396,8 +396,8 @@ if __name__ == "__main__":
 
     # add custom logger
     custom_logger = None
-    if args.logging_dir is not None:
-        custom_logger = CustomLogger(args.gradient_accumulation_steps)
+    if args.log_with == "wandb":
+        custom_logger = CustomLogger(args)
 
     train_util.verify_command_line_training_args(args)
     args = train_util.read_config_from_file(args, parser)  # Read config file
