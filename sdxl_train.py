@@ -729,7 +729,8 @@ def train(args):
                     for path, l in zip(batch["absolute_paths"], per_image_losses):
                         filename = os.path.basename(path)
                         if custom_logger is not None:
-                            custom_logger.log_named(f"per_image_loss/{filename}", l, global_step)
+                            custom_logger.log_named(f"per_image_loss/{filename}", l, global_step, accelerator)
+
 
 
                     if args.min_snr_gamma:
@@ -988,7 +989,7 @@ if __name__ == "__main__":
     # add custom logger
     custom_logger = None
     if args.log_with == "wandb":
-        custom_logger = CustomLogger(args.gradient_accumulation_steps)
+        custom_logger = CustomLogger(args)
 
     train_util.verify_command_line_training_args(args)
     args = train_util.read_config_from_file(args, parser)
