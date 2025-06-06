@@ -722,7 +722,14 @@ def train(args):
                     loss = train_util.conditional_loss(noise_pred.float(), target.float(), args.loss_type, "none", huber_c)
                     if args.masked_loss or ("alpha_masks" in batch and batch["alpha_masks"] is not None):
                         loss = apply_masked_loss(loss, batch)
+
+                    ## DEBUG: loss shape before mean
+                    print("🧪 [Debug] loss shape before mean:", loss.shape)
+
                     loss = loss.mean([1, 2, 3])
+
+                    # DEBUG: loss shape after mean
+                    print("🧪 [Debug] loss shape after mean:", loss.shape)
 
                     # apply custom loss functions to culculate loss per image
                     custom_logger.accelerator = accelerator

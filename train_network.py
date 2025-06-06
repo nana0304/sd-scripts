@@ -1263,7 +1263,14 @@ class NetworkTrainer:
                         loss = loss * weighting
                     if args.masked_loss or ("alpha_masks" in batch and batch["alpha_masks"] is not None):
                         loss = apply_masked_loss(loss, batch)
+                    
+                    ## DEBUG: log loss shape
+                    print("🧪 [Debug] Loss shape before mean:", loss.shape)
+
                     loss = loss.mean([1, 2, 3])
+
+                    ## DEBUG: log loss shape after mean
+                    print("🧪 [Debug] Loss shape after mean:", loss.shape)
 
                     loss_weights = batch["loss_weights"]  # 各sampleごとのweight
                     loss = loss * loss_weights
