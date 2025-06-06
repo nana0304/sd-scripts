@@ -1274,6 +1274,7 @@ class NetworkTrainer:
                     loss = loss.mean()  # 平均なのでbatch_sizeで割る必要なし
 
                     # add custom logging for loss per image
+                    custom_logger.accelerator = accelerator
                     for path, l in zip(batch["absolute_paths"], per_image_losses):
                         filename = os.path.basename(path)
                         if custom_logger is not None:
@@ -1572,7 +1573,7 @@ if __name__ == "__main__":
     # add custom logger
     custom_logger = None
     if args.log_with == "wandb":
-        custom_logger = CustomLogger(args.gradient_accumulation_steps)
+        custom_logger = CustomLogger(args)
 
     train_util.verify_command_line_training_args(args)
     args = train_util.read_config_from_file(args, parser)
