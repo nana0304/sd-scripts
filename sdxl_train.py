@@ -721,6 +721,7 @@ def train(args):
                 ):
                     # do not mean over batch dimension for snr weight or scale v-pred loss
                     loss = train_util.conditional_loss(noise_pred.float(), target.float(), args.loss_type, "none", huber_c)
+
                     if args.masked_loss or ("alpha_masks" in batch and batch["alpha_masks"] is not None):
                         loss = apply_masked_loss(loss, batch)
 
@@ -730,9 +731,6 @@ def train(args):
                     print(f"🧪 [Debug] args.masked_loss: {getattr(args, 'masked_loss', False)}")
                     print(f"🧪 [Debug] alpha_masks in batch: {'alpha_masks' in batch and batch['alpha_masks'] is not None}")
 
-
-                    # apply custom loss functions to culculate loss per image
-                    custom_logger.accelerator = accelerator
                     if custom_logger is None:
                         custom_logger = CustomLogger(args)
                     if not hasattr(custom_logger, 'accelerator') or custom_logger.accelerator is None:
@@ -742,22 +740,17 @@ def train(args):
                     if not hasattr(custom_logger, "loss_buffer"):
                         custom_logger.loss_buffer = []
                         custom_logger.path_buffer = []
-                    
-                    # convert per-image loss
+
+                    # convert per-image loss safely
                     per_image_losses = loss.detach().cpu().numpy()
-                    per_image_losses = np.atleast_1d(per_image_losses) 
-                    
+                    per_image_losses = np.atleast_1d(per_image_losses)
+
                     print(f"🧪 [Debug] per_image_losses: len={len(per_image_losses)}, values={per_image_losses}")
-                    
-                    if isinstance(per_image_losses, float) or (hasattr(per_image_losses, "ndim") and per_image_losses.ndim == 0):
-                        per_image_losses = [per_image_losses]
+                    print(f"🧪 [Debug] absolute_paths: len={len(batch['absolute_paths'])}, values={batch['absolute_paths']}")
 
                     # buffer per-image losses and paths
                     custom_logger.loss_buffer.extend(zip(batch["absolute_paths"], per_image_losses))
-                    
-                    print(f"🧪 [Debug] absolute_paths: len={len(batch['absolute_paths'])}, values={batch['absolute_paths']}")
 
-                    # only log when gradients are synced (i.e., end of accumulation)
                     if accelerator.sync_gradients:
                         print("🧪 [Debug] sync_gradients=True, flushing loss_buffer...")
                         for path, l in custom_logger.loss_buffer:
