@@ -724,6 +724,11 @@ def train(args):
                         loss = apply_masked_loss(loss, batch)
 
                     loss = loss.mean([1, 2, 3])
+                    print(f"🧪 [Debug] Loss shape after mean([1,2,3]): {loss.shape}")
+                    # --- additional info on masking ---
+                    print(f"🧪 [Debug] args.masked_loss: {getattr(args, 'masked_loss', False)}")
+                    print(f"🧪 [Debug] alpha_masks in batch: {'alpha_masks' in batch and batch['alpha_masks'] is not None}")
+
 
                     # apply custom loss functions to culculate loss per image
                     custom_logger.accelerator = accelerator
@@ -739,16 +744,23 @@ def train(args):
                     
                     # convert per-image loss
                     per_image_losses = loss.detach().cpu().numpy()
+                    
+                    print(f"🧪 [Debug] per_image_losses: len={len(per_image_losses)}, values={per_image_losses}")
+                    
                     if isinstance(per_image_losses, float) or (hasattr(per_image_losses, "ndim") and per_image_losses.ndim == 0):
                         per_image_losses = [per_image_losses]
 
                     # buffer per-image losses and paths
                     custom_logger.loss_buffer.extend(zip(batch["absolute_paths"], per_image_losses))
+                    
+                    print(f"🧪 [Debug] absolute_paths: len={len(batch['absolute_paths'])}, values={batch['absolute_paths']}")
 
                     # only log when gradients are synced (i.e., end of accumulation)
                     if accelerator.sync_gradients:
+                        print("🧪 [Debug] sync_gradients=True, flushing loss_buffer...")
                         for path, l in custom_logger.loss_buffer:
                             filename = os.path.basename(path)
+                            print(f"🧪 [Flush] Logging {filename}: {l}")
                             custom_logger.log_named(f"per_image_loss/{filename}", l, global_step)
                         custom_logger.loss_buffer.clear()
 
