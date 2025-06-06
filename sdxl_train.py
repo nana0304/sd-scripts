@@ -45,6 +45,7 @@ from library.custom_train_functions import (
     apply_masked_loss,
 )
 from library.sdxl_original_unet import SdxlUNet2DConditionModel
+import numpy as np
 
 
 UNET_NUM_BLOCKS_FOR_BLOCK_LR = 23
@@ -744,6 +745,7 @@ def train(args):
                     
                     # convert per-image loss
                     per_image_losses = loss.detach().cpu().numpy()
+                    per_image_losses = np.atleast_1d(per_image_losses) 
                     
                     print(f"🧪 [Debug] per_image_losses: len={len(per_image_losses)}, values={per_image_losses}")
                     

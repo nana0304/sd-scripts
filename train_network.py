@@ -48,6 +48,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from tools.argument_analyzer import ArgumentUsageAnalyzer
+import numpy as np
 
 
 # デバッグ用出力
@@ -1289,6 +1290,7 @@ class NetworkTrainer:
 
                     # convert per-image loss
                     per_image_losses = loss.detach().cpu().numpy()
+                    per_image_losses = np.atleast_1d(per_image_losses) 
 
                     print(f"🧪 [Debug] per_image_losses: len={len(per_image_losses)}, values={per_image_losses}")
 
