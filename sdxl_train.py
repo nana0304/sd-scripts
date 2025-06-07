@@ -45,6 +45,7 @@ from library.custom_train_functions import (
     apply_masked_loss,
 )
 from library.sdxl_original_unet import SdxlUNet2DConditionModel
+import numpy as np
 
 
 UNET_NUM_BLOCKS_FOR_BLOCK_LR = 23
@@ -720,32 +721,41 @@ def train(args):
                 ):
                     # do not mean over batch dimension for snr weight or scale v-pred loss
                     loss = train_util.conditional_loss(noise_pred.float(), target.float(), args.loss_type, "none", huber_c)
+
                     if args.masked_loss or ("alpha_masks" in batch and batch["alpha_masks"] is not None):
                         loss = apply_masked_loss(loss, batch)
 
+                    # まず channel, height, width の平均を取って per-sample loss に
                     loss = loss.mean([1, 2, 3])
 
-                    # apply custom loss functions to culculate loss per image
-                    custom_logger.accelerator = accelerator
+                    # Custom logger の初期化
                     if custom_logger is None:
                         custom_logger = CustomLogger(args)
                     if not hasattr(custom_logger, 'accelerator') or custom_logger.accelerator is None:
                         custom_logger.accelerator = accelerator
 
-                    # initialize buffer if not already
+                    # 初回のみ buffer 準備
                     if not hasattr(custom_logger, "loss_buffer"):
                         custom_logger.loss_buffer = []
-                        custom_logger.path_buffer = []
-                    
-                    # convert per-image loss
+
+                    # 💾 Per-image loss をキャッシュ（この段階で .detach() して numpy 変換）
                     per_image_losses = loss.detach().cpu().numpy()
-                    if isinstance(per_image_losses, float) or (hasattr(per_image_losses, "ndim") and per_image_losses.ndim == 0):
-                        per_image_losses = [per_image_losses]
+                    per_image_losses = np.atleast_1d(per_image_losses)
 
-                    # buffer per-image losses and paths
-                    custom_logger.loss_buffer.extend(zip(batch["absolute_paths"], per_image_losses))
+                    # ファイルパス取得（self は使わず、batch から）
+                    absolute_paths = batch["absolute_paths"]
 
-                    # only log when gradients are synced (i.e., end of accumulation)
+                    # 整合性チェック
+                    if len(per_image_losses) != len(absolute_paths):
+                        raise ValueError(f"🧨 Mismatch: per_image_losses ({len(per_image_losses)}) vs absolute_paths ({len(absolute_paths)})")
+
+                    # 対応するファイルパスと一緒に buffer に保持
+                    custom_logger.loss_buffer.extend(zip(absolute_paths, per_image_losses))
+
+                    # 🔚 ここで全体の loss（ログには使わない）を平均化して最終的に返す用などに使う
+                    loss = loss.mean()
+
+                    # 勾配同期のときに flush
                     if accelerator.sync_gradients:
                         for path, l in custom_logger.loss_buffer:
                             filename = os.path.basename(path)

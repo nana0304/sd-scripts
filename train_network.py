@@ -48,6 +48,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from tools.argument_analyzer import ArgumentUsageAnalyzer
+import numpy as np
 
 
 # デバッグ用出力
@@ -1266,33 +1267,40 @@ class NetworkTrainer:
                     
                     loss = loss.mean([1, 2, 3])
 
-                    loss_weights = batch["loss_weights"]  # 各sampleごとのweight
+                    loss_weights = batch["loss_weights"]  # 各 sample ごとの weight
+
+                    # Apply weights
                     loss = loss * loss_weights
 
-                    # min snr gamma, scale v pred loss like noise pred, v pred like loss, debiased estimation etc.
+                    # 💾 Cache per-image losses *before* reduction
+                    per_image_losses = loss.detach().cpu().numpy()
+                    per_image_losses = np.atleast_1d(per_image_losses)
+
+                    # ↓ post process and reduction for global loss
                     loss = self.post_process_loss(loss, args, timesteps, noise_scheduler)
                     loss = loss.mean()  # 平均なのでbatch_sizeで割る必要なし
 
-                    # add custom logging for loss per image
+                    # Initialize logger if needed
                     if custom_logger is None:
                         custom_logger = CustomLogger(args)
                     if not hasattr(custom_logger, 'accelerator') or custom_logger.accelerator is None:
-                            custom_logger.accelerator = accelerator
+                        custom_logger.accelerator = accelerator
 
-                    # initialize buffer if not already
+                    # Initialize buffer if needed
                     if not hasattr(custom_logger, "loss_buffer"):
                         custom_logger.loss_buffer = []
                         custom_logger.path_buffer = []
 
-                    # convert per-image loss
-                    per_image_losses = loss.detach().cpu().numpy()
-                    if isinstance(per_image_losses, float) or (hasattr(per_image_losses, "ndim") and per_image_losses.ndim == 0):
-                        per_image_losses = [per_image_losses]
+                    # Log paths info
+                    image_keys = batch["image_keys"]
+                    absolute_paths = batch["absolute_paths"]
 
-                    # buffer per-image losses and paths
-                    custom_logger.loss_buffer.extend(zip(batch["absolute_paths"], per_image_losses))
+                    # Store per-image loss and corresponding path
+                    if len(absolute_paths) != len(per_image_losses):
+                        raise ValueError(f"🧨 Mismatch: len(absolute_paths)={len(absolute_paths)} vs len(per_image_losses)={len(per_image_losses)}")
 
-                    # only log when gradients are synced (i.e., end of accumulation)
+                    custom_logger.loss_buffer.extend(zip(absolute_paths, per_image_losses))
+
                     if accelerator.sync_gradients:
                         for path, l in custom_logger.loss_buffer:
                             filename = os.path.basename(path)

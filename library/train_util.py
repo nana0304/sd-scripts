@@ -1710,13 +1710,15 @@ class BaseDataset(torch.utils.data.Dataset):
         example["target_sizes_hw"] = torch.stack([torch.LongTensor(x) for x in target_sizes_hw])
         example["flippeds"] = flippeds
 
-        # add file absolute path
-        example["absolute_paths"] = [image_info.absolute_path for image_info in self.image_data.values()]
 
         example["network_multipliers"] = torch.FloatTensor([self.network_multiplier] * len(captions))
 
-        if self.debug_dataset:
-            example["image_keys"] = bucket[image_index : image_index + self.batch_size]
+        image_keys = bucket[image_index : image_index + self.batch_size]
+        example["image_keys"] = image_keys 
+        
+        # add file absolute path
+        example["absolute_paths"] = [self.image_data[k].absolute_path for k in image_keys]
+
         return example
 
     def get_item_for_caching(self, bucket, bucket_batch_size, image_index):
