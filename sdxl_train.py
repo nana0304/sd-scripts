@@ -727,11 +727,6 @@ def train(args):
 
                     # まず channel, height, width の平均を取って per-sample loss に
                     loss = loss.mean([1, 2, 3])
-                    print(f"🧪 [Debug] Loss shape after mean([1,2,3]): {loss.shape}")
-
-                    # --- additional info on masking ---
-                    print(f"🧪 [Debug] args.masked_loss: {getattr(args, 'masked_loss', False)}")
-                    print(f"🧪 [Debug] alpha_masks in batch: {'alpha_masks' in batch and batch['alpha_masks'] is not None}")
 
                     # Custom logger の初期化
                     if custom_logger is None:
@@ -749,8 +744,6 @@ def train(args):
 
                     # ファイルパス取得（self は使わず、batch から）
                     absolute_paths = batch["absolute_paths"]
-                    print(f"🧪 [Debug] per_image_losses: len={len(per_image_losses)}, values={per_image_losses}")
-                    print(f"🧪 [Debug] absolute_paths: len={len(absolute_paths)}, values={absolute_paths}")
 
                     # 整合性チェック
                     if len(per_image_losses) != len(absolute_paths):
@@ -764,10 +757,8 @@ def train(args):
 
                     # 勾配同期のときに flush
                     if accelerator.sync_gradients:
-                        print("🧪 [Debug] sync_gradients=True, flushing loss_buffer...")
                         for path, l in custom_logger.loss_buffer:
                             filename = os.path.basename(path)
-                            print(f"🧪 [Flush] Logging {filename}: {l}")
                             custom_logger.log_named(f"per_image_loss/{filename}", l, global_step)
                         custom_logger.loss_buffer.clear()
 

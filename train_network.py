@@ -1266,10 +1266,8 @@ class NetworkTrainer:
                         loss = apply_masked_loss(loss, batch)
                     
                     loss = loss.mean([1, 2, 3])
-                    print(f"🧪 [Debug] Loss shape after mean([1,2,3]): {loss.shape}")
 
                     loss_weights = batch["loss_weights"]  # 各 sample ごとの weight
-                    print(f"🧪 [Debug] loss_weights: shape={loss_weights.shape}, values={loss_weights}")
 
                     # Apply weights
                     loss = loss * loss_weights
@@ -1277,7 +1275,6 @@ class NetworkTrainer:
                     # 💾 Cache per-image losses *before* reduction
                     per_image_losses = loss.detach().cpu().numpy()
                     per_image_losses = np.atleast_1d(per_image_losses)
-                    print(f"🧪 [Debug] per_image_losses (pre-mean): len={len(per_image_losses)}, values={per_image_losses}")
 
                     # ↓ post process and reduction for global loss
                     loss = self.post_process_loss(loss, args, timesteps, noise_scheduler)
@@ -1297,7 +1294,6 @@ class NetworkTrainer:
                     # Log paths info
                     image_keys = batch["image_keys"]
                     absolute_paths = batch["absolute_paths"]
-                    print(f"🧪 [Debug] absolute_paths (from image_keys): len={len(absolute_paths)}, values={absolute_paths}")
 
                     # Store per-image loss and corresponding path
                     if len(absolute_paths) != len(per_image_losses):
@@ -1306,10 +1302,8 @@ class NetworkTrainer:
                     custom_logger.loss_buffer.extend(zip(absolute_paths, per_image_losses))
 
                     if accelerator.sync_gradients:
-                        print("🧪 [Debug] sync_gradients=True, flushing loss_buffer...")
                         for path, l in custom_logger.loss_buffer:
                             filename = os.path.basename(path)
-                            print(f"🧪 [Flush] Logging {filename}: {l}")
                             custom_logger.log_named(f"per_image_loss/{filename}", l, global_step)
                         custom_logger.loss_buffer.clear()
 
